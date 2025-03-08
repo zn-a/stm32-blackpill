@@ -44,8 +44,15 @@ MEMORY
 2. `Cargo.toml` should include:
 
     ```toml
-   [build]
-   target = "thumbv7em-none-eabihf"
+   [dependencies]
+   cortex-m = "0.7.7"
+   cortex-m-rt = "0.7.5"
+   panic-halt = "1.0.0"
+   
+   # STM32F411 HAL (Hardware Abstraction Layer)
+   [dependencies.stm32f4xx-hal]
+   version = "0.22.1"
+   features = ["stm32f411"]
     ```
    
 3. `.cargo/config.toml` should include:
