@@ -4,3 +4,19 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+cortex-m = "0.7.7"
+cortex-m-rt = "0.7.5"
+panic-halt = "1.0.0"
+
+# STM32F411 HAL (Hardware Abstraction Layer)
+[dependencies.stm32f4xx-hal]
+version = "0.22.1"
+features = ["stm32f411"]
+
+[profile.release]
+panic = "abort"  # Force aborting instead of unwinding
+codegen-units = 1
+debug = true
+lto = true
+strip = true
+opt-level = "z"
