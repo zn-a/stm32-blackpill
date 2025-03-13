@@ -18,6 +18,7 @@ The **STM32F411CEU6** is a high-performance **Cortex-M4F-based microcontroller**
 | **USB Support**               | Full-Speed USB 2.0          |
 | **Bootloader Support**        | DFU (USB) & UART            |
 | **Power Supply**              | 3.3V                        |
+| **Target**                    | `thumbv7em-none-eabihf`     |
 
 ## Memory Layout (`memory.x`)
 
@@ -35,12 +36,12 @@ MEMORY
 
 ## Using ST-LINK V2 (SWD)
 
-1. Ensure the correct Rust target is installed:
+1. Ensure the correct Rust target (`thumbv7em-none-eabihf`) is installed:
 
     ```shell
     rustup target add thumbv7em-none-eabihf
     ```
-   
+
 2. `Cargo.toml` should include:
 
     ```toml
@@ -54,7 +55,7 @@ MEMORY
    version = "0.22.1"
    features = ["stm32f411"]
     ```
-   
+
 3. `.cargo/config.toml` should include:
 
     ```toml
@@ -65,7 +66,7 @@ MEMORY
    runner = "probe-rs run --chip STM32F411CEU6"
    rustflags = ["-C", "link-arg=-Tlink.x"]
     ```
-   
+
 4. Install the necessary tool for flashing:
 
    ```shell
@@ -76,6 +77,12 @@ MEMORY
 
    ```shell
    cargo flash [--example <example_name>] --chip STM32F411CEU6
+   ```
+
+   For example:
+
+   ```shell
+   cargo flash --example blink --chip STM32F411CEU6
    ```
 
 ## Using the USB-C port
