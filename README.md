@@ -2,6 +2,8 @@
 
 The **STM32F411CEU6** is a high-performance **Cortex-M4F-based microcontroller**.
 
+<img src="blackpill_board.png" alt="STM32F411CEU6 Black Pill" width="600"/>
+
 ## Specifications
 
 | **Feature**                   | **Details**                 |
