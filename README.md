@@ -74,6 +74,11 @@ MEMORY
    ```shell
    cargo install cargo-flash
    ```
+   Install `probe-rs` tools. On Windows PowerShell, run:
+
+   ```powershell
+   irm https://github.com/probe-rs/probe-rs/releases/latest/download/probe-rs-tools-installer.ps1 | iex
+   ```
 
 5. Use `cargo flash` to program the STM32 via ST-LINK:
 
