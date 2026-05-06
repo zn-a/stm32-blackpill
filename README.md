@@ -169,8 +169,8 @@ cargo flash --example blink --chip STM32F411CEUx
 cargo flash --example fade_led --chip STM32F411CEUx
 ```
 
-The physical chip on the board is **STM32F411CEU6**, but `probe-rs` uses the generic chip database name **STM32F411CEUx
-**. Using `STM32F411CEU6` may still work, but it can give a wildcard matching warning.
+The physical chip on the board is **STM32F411CEU6**, but `probe-rs` uses the generic chip database name
+**STM32F411CEUx**. Using `STM32F411CEU6` may still work, but it can give a wildcard matching warning.
 
 You can also use the configured `probe-rs` runner:
 
