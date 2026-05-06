@@ -127,6 +127,8 @@ Fix it with **Zadig**:
 6. Unplug and replug the ST-LINK.
 7. Run `probe-rs list` again.
 
+![img.png](zadig_stlink_driver.png)
+
 A working ST-LINK usually appears with USB ID:
 
 ```text
