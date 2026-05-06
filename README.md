@@ -26,7 +26,7 @@ The **STM32F411CEU6** is a high-performance **Cortex-M4F-based microcontroller**
 
 The `memory.x` linker script defines the **Flash and RAM addresses** for the STM32F411:
 
-```
+```text
 MEMORY
 {
   FLASH : ORIGIN = 0x08000000, LENGTH = 512K
@@ -36,62 +36,132 @@ MEMORY
 
 # Programming the STM32F411 Black Pill
 
+This project is written in **Rust** and is meant to be flashed to the STM32F411CEU6 Black Pill.
+
+There are two common ways to program the board:
+
+1. **ST-LINK V2 over SWD**: recommended for development and debugging.
+2. **USB-C using DFU bootloader mode**: useful when flashing directly through the board USB-C port.
+
 ## Using ST-LINK V2 (SWD)
 
-1. Ensure the correct Rust target (`thumbv7em-none-eabihf`) is installed:
+### 1. Install the Rust target
 
-    ```shell
-    rustup target add thumbv7em-none-eabihf
-    ```
+```shell
+rustup target add thumbv7em-none-eabihf
+```
 
-2. `Cargo.toml` should include:
+### 2. Project dependencies
 
-    ```toml
-   [dependencies]
-   cortex-m = "0.7.7"
-   cortex-m-rt = "0.7.5"
-   panic-halt = "1.0.0"
-   
-   # STM32F411 HAL (Hardware Abstraction Layer)
-   [dependencies.stm32f4xx-hal]
-   version = "0.22.1"
-   features = ["stm32f411"]
-    ```
+`Cargo.toml` should include:
 
-3. `.cargo/config.toml` should include:
+```toml
+[dependencies]
+cortex-m = "0.7.7"
+cortex-m-rt = "0.7.5"
+panic-halt = "1.0.0"
 
-    ```toml
-   [build]
-   target = "thumbv7em-none-eabihf"
-   
-   [target.thumbv7em-none-eabihf]
-   runner = "probe-rs run --chip STM32F411CEU6"
-   rustflags = ["-C", "link-arg=-Tlink.x"]
-    ```
+# STM32F411 HAL (Hardware Abstraction Layer)
+[dependencies.stm32f4xx-hal]
+version = "0.22.1"
+features = ["stm32f411"]
+```
 
-4. Install the necessary tool for flashing:
+### 3. Cargo configuration
 
-   ```shell
-   cargo install cargo-flash
-   ```
-   Install `probe-rs` tools. On Windows PowerShell, run:
+`.cargo/config.toml` should include:
 
-   ```powershell
-   irm https://github.com/probe-rs/probe-rs/releases/latest/download/probe-rs-tools-installer.ps1 | iex
-   ```
+```toml
+[build]
+target = "thumbv7em-none-eabihf"
 
-5. Use `cargo flash` to program the STM32 via ST-LINK:
+[target.thumbv7em-none-eabihf]
+runner = "probe-rs run --chip STM32F411CEU6"
+rustflags = ["-C", "link-arg=-Tlink.x"]
+```
 
-   ```shell
-   cargo flash [--example <example_name>] --chip STM32F411CEU6
-   ```
+### 4. Install `probe-rs` tools
 
-   For example:
+`cargo-flash` is now part of `probe-rs`. Do **not** install it with:
 
-   ```shell
-   cargo flash --example blink --chip STM32F411CEU6
-   ```
+```shell
+cargo install cargo-flash
+```
+
+On Windows PowerShell, install the `probe-rs` tools with:
+
+```powershell
+irm https://github.com/probe-rs/probe-rs/releases/latest/download/probe-rs-tools-installer.ps1 | iex
+```
+
+After installation, close and reopen PowerShell, then check:
+
+```powershell
+probe-rs --version
+cargo flash --version
+```
+
+### 5. ST-LINK driver on Windows
+
+If this command:
+
+```powershell
+probe-rs list
+```
+
+returns:
+
+```text
+No debug probes were found.
+```
+
+but **STM32 STLink** appears in Windows Device Manager with a yellow warning triangle, the ST-LINK driver is missing or incorrect.
+
+Fix it with **Zadig**:
+
+1. Open Zadig.
+2. Go to **Options > List All Devices**.
+3. Select **STM32 STLink**.
+4. Select **WinUSB** as the driver.
+5. Click **Install Driver** or **Replace Driver**.
+6. Unplug and replug the ST-LINK.
+7. Run `probe-rs list` again.
+
+A working ST-LINK usually appears with USB ID:
+
+```text
+0483:3748
+```
+
+### 6. Connect the ST-LINK to the Black Pill
+
+Use SWD wiring:
+
+```text
+ST-LINK V2      Black Pill
+3.3V       ->   3.3V
+GND        ->   GND
+SWDIO      ->   SWDIO / DIO
+SWCLK      ->   SWCLK / CLK
+NRST       ->   RST   (optional)
+```
+
+Use **3.3V**, not 5V, unless you are sure your board expects 5V on that pin.
+
+### 7. Flash the blink example
+
+```shell
+cargo flash --example blink --chip STM32F411CEU6
+```
+
+Or use the configured `probe-rs` runner:
+
+```shell
+cargo run --example blink
+```
 
 ## Using the USB-C port
 
 This method flashes firmware directly via USB-C, without an ST-LINK, using DFU bootloader mode.
+
+For USB-C flashing, the board must be put into **DFU bootloader mode** first. This is different from the ST-LINK method above. `probe-rs list` only detects debug probes such as ST-LINK, J-Link, or CMSIS-DAP. It does not list the Black Pill itself when it is only connected by USB-C.
