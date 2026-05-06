@@ -184,8 +184,150 @@ such as `blink`, this can look like the command is hanging because the firmware 
 
 ## Using the USB-C port
 
-This method flashes firmware directly via USB-C, without an ST-LINK, using DFU bootloader mode.
+This method flashes firmware directly through the Black Pill USB-C port, without an ST-LINK, using the STM32 built-in
+DFU bootloader.
 
-For USB-C flashing, the board must be put into **DFU bootloader mode** first. This is different from the ST-LINK method
-above. `probe-rs list` only detects debug probes such as ST-LINK, J-Link, or CMSIS-DAP. It does not list the Black Pill
-itself when it is only connected by USB-C.
+This method is different from the ST-LINK method above. `probe-rs list` only detects debug probes such as ST-LINK,
+J-Link, or CMSIS-DAP. It does **not** list the Black Pill itself when it is connected only by USB-C.
+
+### 1. Install `dfu-util`
+
+On Windows, `dfu-util` can be installed with Chocolatey:
+
+```powershell
+choco install dfu-util -y
+```
+
+After installation, close and reopen PowerShell, then check:
+
+```powershell
+dfu-util --version
+```
+
+### 2. Build the Rust example
+
+Build the example in release mode:
+
+```powershell
+cargo build --example blink --release
+```
+
+### 3. Convert the firmware to a `.bin` file
+
+Install the Rust binary tools if they are not installed yet:
+
+```powershell
+rustup component add llvm-tools-preview
+cargo install cargo-binutils
+```
+
+Then convert the compiled firmware to a raw binary file:
+
+```powershell
+cargo objcopy --example blink --release -- -O binary blink.bin
+```
+
+Check that the file exists:
+
+```powershell
+dir blink.bin
+```
+
+### 4. Put the Black Pill into DFU mode
+
+Disconnect the ST-LINK and connect the Black Pill directly to the computer with a USB-C data cable.
+
+Then put the board into bootloader mode:
+
+```text
+Hold BOOT0
+Press and release RESET / NRST
+Release BOOT0
+```
+
+Windows should detect an STM32 DFU bootloader device. In Zadig or Device Manager, it may appear as:
+
+```text
+STM32 BOOTLOADER
+```
+
+The STM32 DFU bootloader usually has USB ID:
+
+```text
+0483:df11
+```
+
+### 5. Fix the DFU driver on Windows if needed
+
+Check whether `dfu-util` can see the board:
+
+```powershell
+dfu-util -l
+```
+
+If the output contains this error:
+
+```text
+Cannot open DFU device 0483:df11 ... LIBUSB_ERROR_NOT_SUPPORTED
+```
+
+then Windows sees the STM32 bootloader, but the USB driver is wrong for `dfu-util`.
+
+Fix it with **Zadig**:
+
+1. Keep the board connected in DFU mode.
+2. Open Zadig.
+3. Go to **Options > List All Devices**.
+4. Select **STM32 BOOTLOADER** or the device with USB ID **0483:df11**.
+5. Select **WinUSB** as the driver.
+6. Click **Install Driver** or **Replace Driver**.
+7. Unplug and replug the board.
+8. Put the board into DFU mode again.
+9. Run `dfu-util -l` again.
+
+A working STM32 DFU device should show entries like:
+
+```text
+Found DFU: [0483:df11] ... alt=0, name="@Internal Flash  /0x08000000/..."
+```
+
+Use `alt=0` for internal Flash.
+
+### 6. Flash the `.bin` file over USB-C
+
+If there is more than one DFU-capable USB device connected, `dfu-util` may show an error such as:
+
+```text
+More than one DFU capable USB device found!
+```
+
+In that case, specify the STM32 DFU device explicitly with `-d 0483:df11`:
+
+```powershell
+dfu-util -d 0483:df11 -a 0 -s 0x08000000:leave -D blink.bin
+```
+
+If needed, also specify the serial number shown by `dfu-util -l` with `-S`:
+
+```powershell
+dfu-util -d 0483:df11 -S <serial_number> -a 0 -s 0x08000000:leave -D blink.bin
+```
+
+For example:
+
+```powershell
+dfu-util -d 0483:df11 -S 368C35523133 -a 0 -s 0x08000000:leave -D blink.bin
+```
+
+The command writes `blink.bin` to the start of internal Flash at `0x08000000` and then leaves DFU mode.
+
+A warning like this is usually not a problem for this raw binary workflow:
+
+```text
+Warning: Invalid DFU suffix signature
+```
+
+### 7. Run the firmware
+
+After flashing, the board should leave DFU mode and run the firmware. If the LED does not start blinking, press the
+RESET button once.
