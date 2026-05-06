@@ -132,7 +132,7 @@ Fix it with **Zadig**:
 A working ST-LINK usually appears with USB ID:
 
 ```text
-0483:3748
+[0]: STLink V2 -- 0483:3748:3A001E00182D343632525544 (ST-LINK)
 ```
 
 ### 6. Connect the ST-LINK to the Black Pill
