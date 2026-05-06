@@ -115,7 +115,8 @@ returns:
 No debug probes were found.
 ```
 
-but **STM32 STLink** appears in Windows Device Manager with a yellow warning triangle, the ST-LINK driver is missing or incorrect.
+but **STM32 STLink** appears in Windows Device Manager with a yellow warning triangle, the ST-LINK driver is missing or
+incorrect.
 
 Fix it with **Zadig**:
 
@@ -150,15 +151,22 @@ NRST       ->   RST   (optional)
 
 Use **3.3V**, not 5V, unless you are sure your board expects 5V on that pin.
 
-### 7. Flash the blink example
+### 7. Build and flash an example
 
 For normal flashing, use `cargo flash`:
+
+```shell
+cargo flash [--example <example_name>] --chip STM32F411CEUx
+```
+
+For example:
 
 ```shell
 cargo flash --example blink --chip STM32F411CEUx
 ```
 
-The physical chip on the board is **STM32F411CEU6**, but `probe-rs` uses the generic chip database name **STM32F411CEUx**. Using `STM32F411CEU6` may still work, but it can give a wildcard matching warning.
+The physical chip on the board is **STM32F411CEU6**, but `probe-rs` uses the generic chip database name **STM32F411CEUx
+**. Using `STM32F411CEU6` may still work, but it can give a wildcard matching warning.
 
 You can also use the configured `probe-rs` runner:
 
@@ -166,10 +174,14 @@ You can also use the configured `probe-rs` runner:
 cargo run --example blink
 ```
 
-This also flashes the firmware, but it keeps the `probe-rs` session attached after programming. For an embedded program such as `blink`, this can look like the command is hanging because the firmware runs forever in a loop. Stop it with `Ctrl + C` when needed.
+This also flashes the firmware, but it keeps the `probe-rs` session attached after programming. For an embedded program
+such as `blink`, this can look like the command is hanging because the firmware runs forever in a loop. Stop it with
+`Ctrl + C` when needed.
 
 ## Using the USB-C port
 
 This method flashes firmware directly via USB-C, without an ST-LINK, using DFU bootloader mode.
 
-For USB-C flashing, the board must be put into **DFU bootloader mode** first. This is different from the ST-LINK method above. `probe-rs list` only detects debug probes such as ST-LINK, J-Link, or CMSIS-DAP. It does not list the Black Pill itself when it is only connected by USB-C.
+For USB-C flashing, the board must be put into **DFU bootloader mode** first. This is different from the ST-LINK method
+above. `probe-rs list` only detects debug probes such as ST-LINK, J-Link, or CMSIS-DAP. It does not list the Black Pill
+itself when it is only connected by USB-C.
