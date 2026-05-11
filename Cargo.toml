@@ -7,11 +7,18 @@ edition = "2024"
 cortex-m = "0.7.7"
 cortex-m-rt = "0.7.5"
 panic-halt = "1.0.0"
+usb-device = "0.3"
+usbd-ethernet = "0.4"
+smoltcp = { version = "0.12", default-features = false, features = [
+    "medium-ethernet",
+    "proto-ipv4",
+    "socket-tcp"
+] }
 
 # STM32F411 HAL (Hardware Abstraction Layer)
 [dependencies.stm32f4xx-hal]
 version = "0.22.1"
-features = ["stm32f411"]
+features = ["stm32f411", "usb_fs"]
 
 [profile.release]
 panic = "abort"  # Force aborting instead of unwinding
