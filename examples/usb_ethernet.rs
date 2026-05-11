@@ -4,7 +4,11 @@
 
 use cortex_m_rt::entry;
 use panic_halt as _;
-use stm32f4xx_hal::{otg_fs::{USB, UsbBus}, pac, prelude::*};
+use stm32f4xx_hal::{
+    otg_fs::{USB, UsbBus},
+    pac,
+    prelude::*,
+};
 use usb_device::prelude::*;
 
 use smoltcp::{
@@ -62,23 +66,17 @@ fn main() -> ! {
     let usb_bus = UsbBus::new(usb_peripheral, unsafe { &mut EP_MEMORY });
 
     let mac = EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]);
-    let mut usb_eth = Ethernet::new(
-        &usb_bus,
-        mac.0,
-        64,
-        unsafe { &mut USB_IN_NTB },
-        unsafe { &mut USB_OUT_NTB },
-    );
+    let mut usb_eth = Ethernet::new(&usb_bus, mac.0, 64, unsafe { &mut USB_IN_NTB }, unsafe {
+        &mut USB_OUT_NTB
+    });
 
     let mut usb_dev = UsbDeviceBuilder::new(&usb_bus, UsbVidPid(0x1209, 0x0001))
         .device_class(USB_CLASS_CDC)
         .composite_with_iads()
-        .strings(&[
-            StringDescriptors::new(LangID::EN_US)
-                .manufacturer("BlackPill")
-                .product("USB Ethernet")
-                .serial_number("0001"),
-        ])
+        .strings(&[StringDescriptors::new(LangID::EN_US)
+            .manufacturer("BlackPill")
+            .product("USB Ethernet")
+            .serial_number("0001")])
         .unwrap()
         .max_packet_size_0(64)
         .unwrap()
@@ -186,5 +184,3 @@ fn main() -> ! {
         }
     }
 }
-
-
