@@ -125,9 +125,11 @@ fn main() -> ! {
         b"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n";
 
     const INDEX_HTML: &[u8] = include_bytes!("web/index.html");
+    const LED_HTML: &[u8] = include_bytes!("web/led.html");
 
     let mut reply_offset: usize = 0;
     let mut reply_part = ResponsePart::Done;
+    let mut response_body: &'static [u8] = INDEX_HTML;
 
     loop {
         // Poll USB. This must run frequently for enumeration and transfers.
@@ -162,10 +164,16 @@ fn main() -> ! {
             if socket.can_recv() {
                 let _ = socket.recv(|buf| {
                     if buf.starts_with(b"GET /led/on ") {
-                        // On many BlackPill boards PC13 LED is active-low.
+                        // PC13 is active-low on most BlackPill boards.
                         led.set_low();
+                        response_body = LED_HTML;
                     } else if buf.starts_with(b"GET /led/off ") {
                         led.set_high();
+                        response_body = LED_HTML;
+                    } else if buf.starts_with(b"GET /led ") {
+                        response_body = LED_HTML;
+                    } else {
+                        response_body = INDEX_HTML;
                     }
 
                     let len = buf.len();
@@ -179,7 +187,7 @@ fn main() -> ! {
             if reply_part != ResponsePart::Done && socket.can_send() {
                 let current: &[u8] = match reply_part {
                     ResponsePart::Header => HTTP_HEADER,
-                    ResponsePart::Body => INDEX_HTML,
+                    ResponsePart::Body => response_body,
                     ResponsePart::Done => &[],
                 };
 
