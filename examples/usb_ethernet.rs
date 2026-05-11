@@ -19,6 +19,13 @@ use smoltcp::{
 };
 
 use usbd_ethernet::{Ethernet, USB_CLASS_CDC};
+#[derive(Clone, Copy, PartialEq, Eq)]
+
+enum ResponsePart {
+    Header,
+    Body,
+    Done,
+}
 
 #[entry]
 fn main() -> ! {
@@ -111,10 +118,14 @@ fn main() -> ! {
     let cycles_per_us: u64 = (clocks.sysclk().raw() / 1_000_000) as u64;
 
     // Minimal HTTP/1.0 response. No Content-Length is used; the socket is closed after sending.
-    const HTTP_RESPONSE: &[u8] = b"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<html><body><h1>Hello from STM32 Black Pill</h1></body></html>\r\n";
+    // const HTTP_RESPONSE: &[u8] = b"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<html><body><h1>Hello from STM32 Black Pill</h1></body></html>\r\n";
+    const HTTP_HEADER: &[u8] =
+        b"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n";
+
+    const INDEX_HTML: &[u8] = include_bytes!("web/index.html");
 
     let mut reply_offset: usize = 0;
-    let mut reply_in_progress: bool = false;
+    let mut reply_part = ResponsePart::Done;
 
     loop {
         // Poll USB. This must run frequently for enumeration and transfers.
@@ -143,7 +154,7 @@ fn main() -> ! {
             if !socket.is_listening() && !socket.is_active() {
                 let _ = socket.listen(80);
                 reply_offset = 0;
-                reply_in_progress = false;
+                reply_part = ResponsePart::Done;
             }
 
             if socket.can_recv() {
@@ -154,19 +165,36 @@ fn main() -> ! {
                 });
 
                 // Start (or restart) reply.
-                reply_in_progress = true;
+                reply_part = ResponsePart::Header;
                 reply_offset = 0;
             }
 
-            if reply_in_progress && socket.can_send() {
-                let remaining = &HTTP_RESPONSE[reply_offset..];
+            if reply_part != ResponsePart::Done && socket.can_send() {
+                let current: &[u8] = match reply_part {
+                    ResponsePart::Header => HTTP_HEADER,
+                    ResponsePart::Body => INDEX_HTML,
+                    ResponsePart::Done => &[],
+                };
+
+                let remaining = &current[reply_offset..];
+
                 match socket.send_slice(remaining) {
                     Ok(sent) => {
                         reply_offset += sent;
-                        if reply_offset >= HTTP_RESPONSE.len() {
-                            // Request queued. Close gracefully after sending.
-                            socket.close();
-                            reply_in_progress = false;
+
+                        if reply_offset >= current.len() {
+                            reply_offset = 0;
+
+                            match reply_part {
+                                ResponsePart::Header => {
+                                    reply_part = ResponsePart::Body;
+                                }
+                                ResponsePart::Body => {
+                                    socket.close();
+                                    reply_part = ResponsePart::Done;
+                                }
+                                ResponsePart::Done => {}
+                            }
                         }
                     }
                     Err(_) => {
@@ -178,7 +206,7 @@ fn main() -> ! {
             // If the peer closed early, ensure we don't keep stale state.
             if !socket.is_open() {
                 reply_offset = 0;
-                reply_in_progress = false;
+                reply_part = ResponsePart::Done;
             }
         }
     }
