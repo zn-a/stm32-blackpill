@@ -2,7 +2,7 @@
 
 The **STM32F411CEU6** is a high-performance **Cortex-M4F-based microcontroller**.
 
-<img src="blackpill_board.png" alt="STM32F411CEU6 Black Pill" width="600"/>
+<img src="img/blackpill_board.png" alt="STM32F411CEU6 Black Pill" width="600"/>
 
 ## Specifications
 
@@ -128,7 +128,7 @@ Fix it with **Zadig**:
 6. Unplug and replug the ST-LINK.
 7. Run `probe-rs list` again.
 
-![img.png](zadig_stlink_driver.png)
+![img.png](img/zadig_stlink_driver.png)
 
 A working ST-LINK usually appears with USB ID:
 
