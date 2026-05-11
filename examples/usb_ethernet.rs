@@ -119,8 +119,6 @@ fn main() -> ! {
     let mut dwt_hi: u32 = 0;
     let cycles_per_us: u64 = (clocks.sysclk().raw() / 1_000_000) as u64;
 
-    // Minimal HTTP/1.0 response. No Content-Length is used; the socket is closed after sending.
-    // const HTTP_RESPONSE: &[u8] = b"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<html><body><h1>Hello from STM32 Black Pill</h1></body></html>\r\n";
     const HTTP_HEADER: &[u8] =
         b"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n";
 
@@ -153,16 +151,20 @@ fn main() -> ! {
 
         // Very small HTTP server: listen on :80, reply with a fixed page, close.
         {
+            // Get a mutable reference to the TCP socket from the socket set
             let socket = sockets.get_mut::<TcpSocket>(tcp_handle);
 
+            // If the socket is not listening, start listening
             if !socket.is_listening() && !socket.is_active() {
                 let _ = socket.listen(80);
                 reply_offset = 0;
                 reply_part = ResponsePart::Done;
             }
 
+            // If there is a request to be served, respond with a fixed page
             if socket.can_recv() {
                 let _ = socket.recv(|buf| {
+                    // Parse the request and determine the response body
                     if buf.starts_with(b"GET /led/on ") {
                         // PC13 is active-low on most BlackPill boards.
                         led.set_low();
@@ -184,6 +186,7 @@ fn main() -> ! {
                 reply_offset = 0;
             }
 
+            // If there is a response to be sent, send it in parts (header, then body)
             if reply_part != ResponsePart::Done && socket.can_send() {
                 let current: &[u8] = match reply_part {
                     ResponsePart::Header => HTTP_HEADER,
@@ -218,7 +221,7 @@ fn main() -> ! {
                 }
             }
 
-            // If the peer closed early, ensure we don't keep stale state.
+            // If the socket is closed, reset our response state to be ready for the next request
             if !socket.is_open() {
                 reply_offset = 0;
                 reply_part = ResponsePart::Done;
