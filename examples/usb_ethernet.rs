@@ -46,6 +46,8 @@ fn main() -> ! {
     cp.DWT.enable_cycle_counter();
 
     let gpioa = dp.GPIOA.split();
+    let gpioc = dp.GPIOC.split();
+    let mut led = gpioc.pc13.into_push_pull_output();
 
     // Allocate static endpoint memory for USB (required by synopsys-usb-otg).
     static mut EP_MEMORY: [u32; 256] = [0; 256];
@@ -158,13 +160,18 @@ fn main() -> ! {
             }
 
             if socket.can_recv() {
-                // Consume whatever was received (we don't parse the request for this demo).
                 let _ = socket.recv(|buf| {
+                    if buf.starts_with(b"GET /led/on ") {
+                        // On many BlackPill boards PC13 LED is active-low.
+                        led.set_low();
+                    } else if buf.starts_with(b"GET /led/off ") {
+                        led.set_high();
+                    }
+
                     let len = buf.len();
                     (len, ())
                 });
 
-                // Start (or restart) reply.
                 reply_part = ResponsePart::Header;
                 reply_offset = 0;
             }
