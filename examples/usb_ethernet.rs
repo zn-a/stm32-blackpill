@@ -110,9 +110,8 @@ fn main() -> ! {
     let mut dwt_hi: u32 = 0;
     let cycles_per_us: u64 = (clocks.sysclk().raw() / 1_000_000) as u64;
 
-    // Minimal HTTP/1.0 response.
-    // NOTE: content-length is constant (computed offline).
-    const HTTP_RESPONSE: &[u8] = b"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nContent-Length: 68\r\nConnection: close\r\n\r\n<html><body><h1>Hello from STM32 Black Pill</h1></body></html>\r\n";
+    // Minimal HTTP/1.0 response. No Content-Length is used; the socket is closed after sending.
+    const HTTP_RESPONSE: &[u8] = b"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<html><body><h1>Hello from STM32 Black Pill</h1></body></html>\r\n";
 
     let mut reply_offset: usize = 0;
     let mut reply_in_progress: bool = false;
